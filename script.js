@@ -585,6 +585,8 @@
     if (!text.trim()) { showToast('Напишите что-нибудь'); return }
     const dest = $('#destSel').value
     const btn = $('#btnPublish'); btn.disabled = true; btn.textContent = '⏳ Отправка…'
+    const ac = new AbortController()
+    const tm = setTimeout(() => ac.abort(), 25000)
 
     try {
       const imgKeys = Object.keys(pendingImages)
@@ -604,18 +606,19 @@
           }
         }
         fd.set('html', finalHtml)
-        r = await fetch(API_BASE + '/api/publish', { method: 'POST', body: fd })
+        r = await fetch(API_BASE + '/api/publish', { method: 'POST', body: fd, signal: ac.signal })
       } else {
         const body = { userId, destination: dest, html, text }
         if (dest === 'channel') { const chId = Number($('#channelSel').value); if (chId) body.channelId = chId }
-        r = await fetch(API_BASE + '/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        r = await fetch(API_BASE + '/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ac.signal })
       }
+      clearTimeout(tm)
 
       let txt
       try { txt = await r.text(); const d = JSON.parse(txt); if (d.ok) { showToast('✅ Опубликовано!'); if (d.link) showToast('📎 ' + d.link, 4000); pendingImages = {}; return } else { txt = d.error || 'Ошибка' } }
       catch (e) { txt = 'HTTP ' + r.status + ' — сервер не отвечает' }
       showToast('❌ ' + txt)
-    } catch (e) { showToast('❌ Нет сети') }
+    } catch (e) { showToast('❌ ' + (e.name === 'AbortError' ? 'Таймаут — сервер не ответил за 25с' : 'Нет сети')) }
     btn.disabled = false; btn.textContent = '📤 Опубликовать'
   }
 
