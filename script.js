@@ -633,7 +633,7 @@
       clearTimeout(tm)
 
       let txt
-      try { txt = await r.text(); const d = JSON.parse(txt); if (d.ok) { showToast('✅ Опубликовано!'); if (d.link) showToast('📎 ' + d.link, 4000); pendingImages = {}; return } else { txt = d.error || 'Ошибка' } }
+      try { txt = await r.text(); const d = JSON.parse(txt); if (d.ok) { showToast('✅ Опубликовано!'); if (d.link) showToast('📎 ' + d.link, 4000); pendingImages = {}; btn.disabled = false; btn.textContent = '📤 Опубликовать'; return } else { txt = d.error || 'Ошибка' } }
       catch (e) { txt = 'HTTP ' + r.status + ' — сервер не отвечает' }
       showToast('❌ ' + txt)
     } catch (e) { showToast('❌ ' + (e.name === 'AbortError' ? 'Таймаут — сервер не ответил за 25с' : 'Нет сети')) }
