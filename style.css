@@ -8,9 +8,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:64
 .h-title{font-size:16px;font-weight:700;letter-spacing:-.3px}
 .h-badge{font-size:8px;padding:2px 5px;border-radius:4px;background:var(--accent);color:#fff;font-weight:700;letter-spacing:.3px}
 .h-counter{margin-left:auto;font-size:11px;color:var(--hint);white-space:nowrap;font-variant-numeric:tabular-nums}
-#toolbar{flex-shrink:0;background:var(--sec);border-bottom:1px solid var(--border);padding:3px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#toolbar{flex-shrink:0;background:var(--sec);border-bottom:1px solid var(--border);padding:3px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x mandatory}
 #toolbar::-webkit-scrollbar{display:none}
 .tb-row{display:flex;align-items:center;gap:1px;padding:0 6px;width:max-content}
+.tb{scroll-snap-align:start}
 .tb{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text);-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0 4px;flex-shrink:0;transition:background .12s,transform .1s}
 .tb:active{background:var(--border);transform:scale(.92)}
 .tb-sep{width:1px;height:20px;background:var(--border);margin:0 3px;flex-shrink:0;opacity:.5}

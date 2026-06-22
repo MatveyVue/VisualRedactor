@@ -135,7 +135,10 @@
   /* === Editor Events === */
 
   ed.addEventListener('input', () => {
-    updateCounter(); previewExpanded = false; updatePreview(); saveDraft()
+    updateCounter()
+    previewExpanded = false
+    cancelAnimationFrame(ed._previewFrame)
+    ed._previewFrame = requestAnimationFrame(() => { updatePreview(); saveDraft() })
     if (ed.innerText.length > MAX_LEN) {
       ed.innerText = ed.innerText.slice(0, MAX_LEN); updatePreview()
       showToast('Максимум ' + MAX_LEN + ' символов')
@@ -152,29 +155,32 @@
 
   /* === Toolbar === */
 
-  $$('.tb[data-cmd]').forEach((btn) => { btn.addEventListener('click', () => execCmd(btn.dataset.cmd)) })
+  $$('.tb[data-cmd]').forEach((btn) => { btn.addEventListener('click', () => { if (tg) tg.HapticFeedback?.impactOccurred?.('light'); execCmd(btn.dataset.cmd) }) })
+
+  function markCursor() {
+    const sel = window.getSelection()
+    if (!sel.rangeCount) return null
+    savedRange = sel.getRangeAt(0)
+    const m = document.createElement('span')
+    m.id = 've_mkr'; m.style.display = 'none'
+    savedRange.insertNode(m)
+    return m
+  }
 
   function execCmd(cmd) {
     ed.focus()
     try {
-      const sel = window.getSelection()
-      if (sel.rangeCount) {
-        savedRange = sel.getRangeAt(0)
-        const m = document.createElement('span')
-        m.id = 've_mkr'; m.style.display = 'none'
-        savedRange.insertNode(m)
-      }
       switch (cmd) {
+        case 'table': markCursor(); insertTable(); break
+        case 'slideshow': markCursor(); pickPhotos(); break
+        case 'map': markCursor(); insertMap(); break
+        case 'emoji': markCursor(); pickEmoji(); break
         case 'h1': case 'h2': case 'h3': toggleBlock(cmd); break
         case 'spoiler': toggleSpoiler(); break
         case 'task': toggleTask(); break
         case 'blockquote': toggleBlockquote(); break
         case 'pullquote': togglePullquote(); break
         case 'details': toggleDetails(); break
-        case 'table': insertTable(); break
-        case 'slideshow': pickPhotos(); break
-        case 'map': insertMap(); break
-        case 'emoji': pickEmoji(); break
         case 'code': toggleCode(); break
         case 'sub': toggleSub(); break
         case 'sup': toggleSup(); break
@@ -424,6 +430,12 @@
 
   /* === Photos / Slideshow === */
 
+  function insertAfter(el) {
+    const p = document.createElement('p'); p.innerHTML = '<br>'
+    el.parentNode.insertBefore(p, el.nextSibling)
+    selectEnd(p)
+  }
+
   function pickPhotos() {
     const picker = $('#imgPicker')
     picker.value = ''
@@ -439,15 +451,20 @@
         const key = 'img_' + Date.now() + '_' + i; pendingImages[key] = file; img.dataset.imgKey = key
       })
       m.parentNode.replaceChild(div, m)
+      insertAfter(div)
       updatePreview(); showToast('Добавлено ' + files.length + ' фото')
     }
     picker.click()
   }
 
   function insertMap() {
+    const m = document.getElementById('ve_mkr')
+    if (!m) { showToast('Поставьте курсор в редакторе'); return }
     const div = document.createElement('div'); div.className = 'map'
     div.dataset.lat = '55.751244'; div.dataset.lng = '37.618423'; div.dataset.address = 'Москва, Красная площадь'
-    const r = window.getSelection().getRangeAt(0); r.deleteContents(); r.insertNode(div)
+    m.parentNode.replaceChild(div, m)
+    insertAfter(div)
+    ed.focus(); updatePreview()
   }
 
   function pickEmoji() {
@@ -465,8 +482,9 @@
       const m = document.getElementById('ve_mkr')
       if (!m) { showToast('Поставьте курсор в редакторе'); return }
       const sp = document.createElement('span'); sp.className = 'tg-emoji'; sp.dataset.id = id; sp.textContent = '👍'
-      const r = document.createRange(); r.setStartAfter(m); r.deleteContents(); r.insertNode(sp)
-      m.remove(); closeModal(); ed.focus(); updatePreview()
+      m.parentNode.replaceChild(sp, m)
+      insertAfter(sp)
+      closeModal(); ed.focus(); updatePreview()
     }
     wrap.appendChild(hint); wrap.appendChild(inp); wrap.appendChild(btn)
     showModal('Кастомный эмодзи', wrap); inp.focus()
