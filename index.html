@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>VisualEditor</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="header">
+    <div class="h-row">
+      <h1 class="h-title">VisualEditor</h1>
+      <span class="h-badge">v2.0</span>
+      <span id="counter" class="h-counter">0 / 32 768</span>
+    </div>
+  </header>
+
+  <div id="toolbar">
+    <div class="tb-row">
+      <button class="tb" data-cmd="h1" title="Заголовок 1"><span class="tb-lbl">H1</span></button>
+      <button class="tb" data-cmd="h2" title="Заголовок 2"><span class="tb-lbl">H2</span></button>
+      <button class="tb" data-cmd="h3" title="Заголовок 3"><span class="tb-lbl">H3</span></button>
+      <span class="tb-sep"></span>
+      <button class="tb" data-cmd="bold" title="Жирный"><b>B</b></button>
+      <button class="tb" data-cmd="italic" title="Курсив"><i>I</i></button>
+      <button class="tb" data-cmd="underline" title="Подчёркнутый"><u>U</u></button>
+      <button class="tb" data-cmd="strikeThrough" title="Зачёркнутый"><s>S</s></button>
+      <button class="tb" data-cmd="spoiler" title="Спойлер"><span class="tb-spoiler">S</span></button>
+      <span class="tb-sep"></span>
+      <button class="tb" data-cmd="sub" title="Подстрочный"><span class="tb-sub">x₂</span></button>
+      <button class="tb" data-cmd="sup" title="Надстрочный"><span class="tb-sup">x²</span></button>
+      <button class="tb" data-cmd="mark" title="Выделение"><span class="tb-mark">≡</span></button>
+      <button class="tb" data-cmd="code" title="Моноширинный"><span class="tb-mono">&lt;/&gt;</span></button>
+    </div>
+    <div class="tb-row">
+      <button class="tb" data-cmd="blockquote" title="Цитата"><span class="tb-q">"</span></button>
+      <button class="tb" data-cmd="pullquote" title="Выносная цитата"><span class="tb-pq">❝</span></button>
+      <button class="tb" data-cmd="details" title="Спойлер-блок"><span class="tb-details">⊞</span></button>
+      <span class="tb-sep"></span>
+      <button class="tb" data-cmd="insertOrderedList" title="Нумерованный список"><span class="tb-ol">1.</span></button>
+      <button class="tb" data-cmd="insertUnorderedList" title="Маркированный список"><span class="tb-ul">•</span></button>
+      <button class="tb" data-cmd="task" title="Чек-лист"><span class="tb-task">☑</span></button>
+      <span class="tb-sep"></span>
+      <button class="tb" data-cmd="table" title="Таблица">▦</button>
+      <button class="tb" data-cmd="hr" title="Разделитель">—</button>
+      <button class="tb" data-cmd="pre" title="Блок кода"><span class="tb-pre">&lt;pre&gt;</span></button>
+      <span class="tb-sep"></span>
+      <button class="tb" data-cmd="slideshow" title="Слайдшоу из фото"><span class="tb-ss">🖼</span></button>
+      <button class="tb" data-cmd="map" title="Карта"><span class="tb-map">📍</span></button>
+      <button class="tb" data-cmd="emoji" title="Кастомный эмодзи"><span class="tb-emoji-btn">😀</span></button>
+      <button class="tb" data-cmd="math" title="Формула"><span class="tb-math">∑</span></button>
+      <span class="tb-sep"></span>
+      <button class="tb" data-cmd="clear" title="Очистить">🗑</button>
+    </div>
+  </div>
+
+  <div id="editor-wrap">
+    <div id="editor" contenteditable="true" data-placeholder="Напишите что-нибудь…"></div>
+  </div>
+
+  <div id="publish-bar">
+    <label class="pb-row">
+      <span class="pb-lbl">Куда:</span>
+      <select id="destSel">
+        <option value="saved">Сохранённые</option>
+        <option value="channel">Канал</option>
+      </select>
+    </label>
+    <div id="channelArea" class="pb-row hidden">
+      <span class="pb-lbl">Канал:</span>
+      <div class="ch-flex">
+        <select id="channelSel" class="ch-sel"></select>
+        <button id="btnManageCh" class="pb-btn" title="Управление каналами">⚙</button>
+      </div>
+    </div>
+    <div class="pb-row">
+      <button id="btnPreview" class="pb-btn pb-prev">👁 Превью</button>
+      <button id="btnPublish" class="pb-btn pb-send">📤 Опубликовать</button>
+    </div>
+  </div>
+
+  <div id="preview-wrap" class="hidden">
+    <div class="pv-head">
+      <span>Предпросмотр</span>
+      <div class="pv-themes">
+        <button class="pv-theme active" data-theme="light">☀️</button>
+        <button class="pv-theme" data-theme="dark">🌙</button>
+      </div>
+    </div>
+    <div id="preview-msg" class="tg-msg tg-light tg-channel"></div>
+  </div>
+</div>
+
+<div id="modal-overlay" class="hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <span id="modalTitle">...</span>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<input type="file" id="imgPicker" accept="image/*" multiple hidden>
+
+<script src="script.js" data-api="https://backend-visual-redactor.vercel.app"></script>
+</body>
+</html>
