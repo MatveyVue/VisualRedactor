@@ -30,6 +30,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:64
 #editor-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative}
 #editor{min-height:150px;padding:14px 16px;outline:none;font-size:16px;line-height:1.65;word-wrap:break-word;overflow-wrap:break-word;background:var(--bg);color:var(--text);-webkit-user-modify:read-write;-webkit-user-select:text;touch-action:manipulation;caret-color:var(--accent);transition:background .2s}
 #editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none;opacity:.6}
+#editor ::selection{background:var(--accent);color:#fff}
 #editor p{margin:4px 0;min-height:1.4em}
 #editor h1{font-size:22px;font-weight:700;margin:12px 0 6px;letter-spacing:-.5px}
 #editor h2{font-size:19px;font-weight:700;margin:10px 0 5px;letter-spacing:-.3px}
@@ -71,7 +72,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:64
 #publish-bar{flex-shrink:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 14px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
 .pb-row{display:flex;align-items:center;gap:8px}
 .pb-lbl{font-size:12px;color:var(--hint);white-space:nowrap;min-width:50px}
-#destSel,.ch-sel{padding:8px 28px 8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;flex:1;min-height:36px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238e8e93' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;cursor:pointer}
+#destSel,.ch-sel{padding:8px 28px 8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;flex:1;min-height:36px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238e8e93' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;cursor:pointer;transition:border-color .15s}
+#destSel:focus,.ch-sel:focus{border-color:var(--accent);outline:none}
 .ch-flex{display:flex;flex:1;gap:4px}
 .pb-btn{padding:9px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;background:var(--sec);color:var(--text);min-height:38px;touch-action:manipulation;transition:opacity .15s,transform .1s;font-weight:500}
 .pb-btn:active{opacity:.7;transform:scale(.96)}
