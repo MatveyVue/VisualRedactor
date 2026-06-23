@@ -85,6 +85,8 @@
   function closeModal(e) {
     if (e && e.target !== $('#modal-overlay') && !e.target.closest('#modalCloseBtn')) return
     $('#modal-overlay').classList.add('hidden')
+    const m = document.getElementById('ve_mkr')
+    if (m) m.remove()
   }
   $('#modal-overlay').addEventListener('click', closeModal)
   $('#modalCloseBtn').addEventListener('click', closeModal)
@@ -117,6 +119,7 @@
 
   function loadDraft() {
     try { const d = localStorage.getItem('ve_draft'); if (d) ed.innerHTML = d } catch (e) {}
+    if (!ed.children.length) ed.innerHTML = '<p><br></p>'
   }
   function saveDraft() {
     clearTimeout(ed._save)
@@ -139,6 +142,8 @@
     previewExpanded = false
     cancelAnimationFrame(ed._previewFrame)
     ed._previewFrame = requestAnimationFrame(() => { updatePreview(); saveDraft() })
+    cancelAnimationFrame(ed._normFrame)
+    ed._normFrame = requestAnimationFrame(normalizeEditor)
     if (ed.innerText.length > MAX_LEN) {
       ed.innerText = ed.innerText.slice(0, MAX_LEN); updatePreview()
       showToast('Максимум ' + MAX_LEN + ' символов')
@@ -151,6 +156,13 @@
   ed.addEventListener('click', (e) => {
     const li = e.target.closest('ul.task li')
     if (li && !window.getSelection().toString()) { li.classList.toggle('done'); saveDraft(); updatePreview() }
+  })
+
+  ed.addEventListener('paste', (e) => {
+    e.preventDefault()
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain')
+    document.execCommand('insertText', false, text)
+    updatePreview(); saveDraft()
   })
 
   /* === Toolbar === */
@@ -167,6 +179,27 @@
     m.id = 've_mkr'; m.style.display = 'none'
     savedRange.insertNode(m)
     return m
+  }
+
+  function liftBlock(el) {
+    const p = el.closest('p,li,h1,h2,h3')
+    if (p && p.parentNode && p !== el) {
+      const np = document.createElement('p'); np.innerHTML = '<br>'
+      p.parentNode.insertBefore(np, p.nextSibling)
+      p.parentNode.insertBefore(el, np)
+      if (!p.textContent.trim()) p.remove()
+    }
+  }
+
+  function normalizeEditor() {
+    if (!ed.children.length) ed.innerHTML = '<p><br></p>'
+    ed.querySelectorAll('div:not(.slideshow):not(.map):not(.details-body)').forEach((d) => {
+      if (d.closest('.slideshow,.map,.details-body')) return
+      const p = document.createElement('p')
+      while (d.firstChild) p.appendChild(d.firstChild)
+      d.replaceWith(p)
+    })
+    ed.querySelectorAll('p:empty').forEach((p) => p.innerHTML = '<br>')
   }
 
   function execCmd(cmd) {
@@ -188,6 +221,7 @@
         case 'sup': toggleSup(); break
         case 'mark': toggleMark(); break
         case 'math': insertMath(); break
+        case 'hr': insertHR(); break
         case 'pre': togglePre(); break
         case 'clear': clearEditor(); break
         default: document.execCommand(cmd, false, null)
@@ -274,7 +308,13 @@
     const r = sel.getRangeAt(0)
     let node = r.commonAncestorContainer
     if (node.nodeType === 3) node = node.parentNode
-    const block = node.closest('h1,h2,h3,p,li,div')
+    if (node === ed || node.closest && !node.closest('p,li,h1,h2,h3')) {
+      const p = document.createElement('p')
+      if (!r.collapsed) p.appendChild(r.extractContents())
+      else p.innerHTML = '<br>'
+      r.deleteContents(); r.insertNode(p); selectEnd(p); node = p
+    }
+    const block = node.closest('h1,h2,h3,p,li')
     if (block && ['H1', 'H2', 'H3'].includes(block.tagName)) {
       const p = document.createElement('p')
       p.innerHTML = block.innerHTML; block.replaceWith(p); selectEnd(p)
@@ -291,12 +331,18 @@
     const r = sel.getRangeAt(0)
     let n = r.commonAncestorContainer
     if (n.nodeType === 3) n = n.parentNode
+    if (n === ed || n.closest && !n.closest('p,li,h1,h2,h3')) {
+      const p = document.createElement('p')
+      if (!r.collapsed) p.appendChild(r.extractContents())
+      else p.innerHTML = '<br>'
+      r.deleteContents(); r.insertNode(p); selectEnd(p); n = p
+    }
     const existing = n.closest('blockquote')
     if (existing) {
       const p = document.createElement('p'); p.innerHTML = existing.innerHTML; existing.replaceWith(p); selectEnd(p)
     } else {
       const bq = document.createElement('blockquote')
-      const p = n.closest('p,li,h1,h2,h3,div')
+      const p = n.closest('p,li,h1,h2,h3')
       if (p && p.parentNode) { bq.innerHTML = p.innerHTML; p.replaceWith(bq); selectEnd(bq) }
       else { bq.appendChild(r.extractContents()); r.deleteContents(); r.insertNode(bq) }
     }
@@ -308,6 +354,12 @@
     const r = sel.getRangeAt(0)
     let n = r.commonAncestorContainer
     if (n.nodeType === 3) n = n.parentNode
+    if (n === ed || n.closest && !n.closest('p,li,h1,h2,h3')) {
+      const p = document.createElement('p')
+      if (!r.collapsed) p.appendChild(r.extractContents())
+      else p.innerHTML = '<br>'
+      r.deleteContents(); r.insertNode(p); selectEnd(p); n = p
+    }
     const existing = n.closest('aside.pull-quote')
     if (existing) {
       const p = document.createElement('p')
@@ -315,7 +367,7 @@
       existing.replaceWith(p); selectEnd(p)
     } else {
       const a = document.createElement('aside'); a.className = 'pull-quote'
-      const p = n.closest('p,li,h1,h2,h3,div')
+      const p = n.closest('p,li,h1,h2,h3')
       if (p && p.parentNode) { a.innerHTML = p.innerHTML; p.replaceWith(a); selectEnd(a) }
       else { a.appendChild(r.extractContents()); r.deleteContents(); r.insertNode(a) }
     }
@@ -342,6 +394,7 @@
         const p = document.createElement('p'); p.textContent = 'скрытый контент'; body.appendChild(p)
       }
       d.appendChild(sum); d.appendChild(body); r.insertNode(d)
+      liftBlock(d)
     }
   }
 
@@ -369,6 +422,7 @@
         const li = document.createElement('li'); li.textContent = 'задача'; ul.appendChild(li)
       }
       r.insertNode(ul)
+      liftBlock(ul)
     }
   }
 
@@ -388,6 +442,7 @@
       if (selText) { pre.textContent = selText; r.deleteContents() }
       else { pre.textContent = 'код' }
       r.insertNode(pre)
+      liftBlock(pre)
     }
   }
 
@@ -406,7 +461,20 @@
       t.appendChild(tr)
     }
     const r = window.getSelection().getRangeAt(0); r.deleteContents(); r.insertNode(t)
+    liftBlock(t)
     const p = document.createElement('p'); p.innerHTML = '&nbsp;'; t.parentNode.insertBefore(p, t.nextSibling)
+  }
+
+  function insertHR() {
+    const sel = window.getSelection()
+    if (!sel.rangeCount) return
+    const r = sel.getRangeAt(0)
+    const hr = document.createElement('hr')
+    r.deleteContents(); r.insertNode(hr)
+    liftBlock(hr)
+    const p = document.createElement('p'); p.innerHTML = '<br>'
+    hr.parentNode.insertBefore(p, hr.nextSibling)
+    selectEnd(p)
   }
 
   function insertMath() {
@@ -453,6 +521,7 @@
         const key = 'img_' + Date.now() + '_' + i; pendingImages[key] = file; img.dataset.imgKey = key
       })
       m.parentNode.replaceChild(div, m)
+      liftBlock(div)
       insertAfter(div)
       updatePreview(); showToast('Добавлено ' + files.length + ' фото')
     }
@@ -465,6 +534,7 @@
     const div = document.createElement('div'); div.className = 'map'
     div.dataset.lat = '55.751244'; div.dataset.lng = '37.618423'; div.dataset.address = 'Москва, Красная площадь'
     m.parentNode.replaceChild(div, m)
+    liftBlock(div)
     insertAfter(div)
     ed.focus(); updatePreview()
   }
@@ -602,6 +672,9 @@
   /* === Publish === */
 
   $('#btnPublish').onclick = async () => {
+    const oldMkr = document.getElementById('ve_mkr')
+    if (oldMkr) oldMkr.remove()
+    normalizeEditor()
     const html = ed.innerHTML; const text = ed.innerText
     if (!text.trim()) { showToast('Напишите что-нибудь'); return }
     const dest = $('#destSel').value
@@ -639,21 +712,42 @@
       try { txt = await r.text(); const d = JSON.parse(txt); if (d.ok) { showToast('✅ Опубликовано!'); if (d.link) showToast('📎 ' + d.link, 4000); pendingImages = {}; btn.disabled = false; btn.textContent = '📤 Опубликовать'; return } else { txt = d.error || 'Ошибка' } }
       catch (e) { txt = 'HTTP ' + r.status + ' — сервер не отвечает' }
       showToast('❌ ' + txt)
-    } catch (e) { showToast('❌ ' + (e.name === 'AbortError' ? 'Таймаут — сервер не ответил за 25с' : 'Нет сети')) }
+      } catch (e) {
+        console.warn('publish error:', e)
+        showToast('❌ ' + (e.name === 'AbortError' ? 'Таймаут — сервер не ответил за 25с' : (e.message || 'Нет сети')))
+      }
     btn.disabled = false; btn.textContent = '📤 Опубликовать'
   }
 
   /* === Keyboard shortcuts === */
 
   ed.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); $('#btnPublish').click() }
-    if (e.key === 'Enter' && e.shiftKey) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); $('#btnPublish').click(); return }
+    if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
-      if (sel.rangeCount) {
-        const r = sel.getRangeAt(0); let n = r.commonAncestorContainer
-        if (n.nodeType === 3) n = n.parentNode
-        if (n.closest('h1,h2,h3,blockquote,aside,li')) { e.preventDefault(); document.execCommand('insertLineBreak') }
+      if (!sel.rangeCount) return
+      let n = sel.getRangeAt(0).commonAncestorContainer
+      if (n.nodeType === 3) n = n.parentNode
+      const li = n.closest('li')
+      if (li && n.closest('ul.task')) {
+        const isEmpty = !li.textContent.trim() || (li.children.length === 0 && !li.textContent.trim())
+        if (isEmpty) {
+          e.preventDefault()
+          const ul = li.closest('ul')
+          const p = document.createElement('p'); p.innerHTML = '<br>'
+          ul.parentNode.insertBefore(p, ul.nextSibling)
+          li.remove()
+          if (!ul.children.length) ul.remove()
+          selectEnd(p)
+          return
+        }
       }
+      return
+    }
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault()
+      document.execCommand('insertLineBreak', false, null)
+      return
     }
     if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '    ') }
   })
