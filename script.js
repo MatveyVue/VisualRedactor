@@ -485,7 +485,8 @@
       if (!m) { showToast('Поставьте курсор в редакторе'); return }
       const sp = document.createElement('span'); sp.className = 'tg-emoji'; sp.dataset.id = id; sp.textContent = '👍'
       m.parentNode.replaceChild(sp, m)
-      insertAfter(sp)
+      const nr = document.createRange(); nr.setStartAfter(sp); nr.collapse(true)
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(nr)
       closeModal(); ed.focus(); updatePreview()
     }
     wrap.appendChild(hint); wrap.appendChild(inp); wrap.appendChild(btn)
