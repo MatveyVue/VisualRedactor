@@ -158,6 +158,8 @@
   $$('.tb[data-cmd]').forEach((btn) => { btn.addEventListener('click', () => { if (tg) tg.HapticFeedback?.impactOccurred?.('light'); execCmd(btn.dataset.cmd) }) })
 
   function markCursor() {
+    const old = document.getElementById('ve_mkr')
+    if (old) old.remove()
     const sel = window.getSelection()
     if (!sel.rangeCount) return null
     savedRange = sel.getRangeAt(0)
@@ -352,7 +354,7 @@
     const existing = n.closest('ul.task')
     if (existing) {
       const p = document.createElement('p')
-      p.innerHTML = existing.innerHTML.replace(/<li[^>]*>/g, '• ')
+      p.innerHTML = existing.innerHTML.replace(/<li[^>]*>/g, '• ').replace(/<\/li>/gi, '')
       existing.replaceWith(p)
     } else {
       const ul = document.createElement('ul'); ul.className = 'task'
@@ -652,7 +654,7 @@
         if (n.closest('h1,h2,h3,blockquote,aside,li')) { e.preventDefault(); document.execCommand('insertLineBreak') }
       }
     }
-    if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;') }
+    if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '    ') }
   })
 
   console.log('VisualEditor v2 loaded')
