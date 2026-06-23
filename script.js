@@ -339,7 +339,15 @@
     }
     const existing = n.closest('blockquote')
     if (existing) {
-      const p = document.createElement('p'); p.innerHTML = existing.innerHTML; existing.replaceWith(p); selectEnd(p)
+      const p = document.createElement('p')
+      const children = Array.from(existing.childNodes)
+      if (children.length === 1 && children[0].nodeType === 1 && children[0].tagName === 'P') {
+        p.innerHTML = existing.innerHTML; existing.replaceWith(p); selectEnd(p)
+      } else {
+        existing.replaceWith(...children)
+        const last = children.filter(c => c.nodeType === 1).pop() || children[children.length - 1]
+        if (last) selectEnd(last)
+      }
     } else {
       const bq = document.createElement('blockquote')
       const p = n.closest('p,li,h1,h2,h3')
@@ -362,9 +370,10 @@
     }
     const existing = n.closest('aside.pull-quote')
     if (existing) {
-      const p = document.createElement('p')
-      p.innerHTML = existing.innerHTML.replace(/<cite>[\s\S]*?<\/cite>/g, '')
-      existing.replaceWith(p); selectEnd(p)
+      const children = Array.from(existing.childNodes)
+      existing.replaceWith(...children)
+      const last = children.filter(c => c.nodeType === 1).pop() || children[children.length - 1]
+      if (last) selectEnd(last)
     } else {
       const a = document.createElement('aside'); a.className = 'pull-quote'
       const p = n.closest('p,li,h1,h2,h3')
@@ -548,12 +557,29 @@
     inp.style.cssText = 'padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--bg);color:var(--text)'
     const btn = document.createElement('button'); btn.textContent = 'Вставить'
     btn.style.cssText = 'padding:10px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:14px;cursor:pointer'
-    btn.onclick = () => {
+    btn.onclick = async () => {
       const id = inp.value.trim()
       if (!id) { showToast('Введите ID эмодзи'); return }
       const m = document.getElementById('ve_mkr')
       if (!m) { showToast('Поставьте курсор в редакторе'); return }
-      const sp = document.createElement('span'); sp.className = 'tg-emoji'; sp.dataset.id = id; sp.textContent = '👍'
+      btn.disabled = true; btn.textContent = '⏳'
+      const sp = document.createElement('span'); sp.className = 'tg-emoji'; sp.dataset.id = id
+      try {
+        const r = await fetch(API_BASE + '/api/emoji', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: [id] })
+        })
+        const d = await r.json()
+        if (d.ok && d.emojis && d.emojis[0] && d.emojis[0].url) {
+          const img = document.createElement('img'); img.src = d.emojis[0].url
+          img.style.cssText = 'width:1.2em;height:1.2em;vertical-align:middle;display:inline-block'
+          sp.appendChild(img)
+        } else {
+          sp.textContent = '👍'
+        }
+      } catch (e) {
+        sp.textContent = '👍'
+      }
       m.parentNode.replaceChild(sp, m)
       const nr = document.createRange(); nr.setStartAfter(sp); nr.collapse(true)
       const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(nr)
@@ -726,7 +752,8 @@
     if (e.key === 'Enter' && !e.shiftKey) {
       const sel = window.getSelection()
       if (!sel.rangeCount) return
-      let n = sel.getRangeAt(0).commonAncestorContainer
+      const r = sel.getRangeAt(0)
+      let n = r.commonAncestorContainer
       if (n.nodeType === 3) n = n.parentNode
       const li = n.closest('li')
       if (li && n.closest('ul.task')) {
@@ -741,6 +768,23 @@
           selectEnd(p)
           return
         }
+      }
+      const h = n.closest('h1,h2,h3')
+      if (h) {
+        e.preventDefault()
+        const rest = document.createRange()
+        rest.selectNodeContents(h)
+        rest.setStart(r.endContainer, r.endOffset)
+        const extracted = rest.extractContents()
+        const p = document.createElement('p')
+        if (extracted && extracted.textContent.trim()) {
+          p.appendChild(extracted)
+        } else {
+          p.innerHTML = '<br>'
+        }
+        h.parentNode.insertBefore(p, h.nextSibling)
+        selectEnd(p)
+        return
       }
       return
     }
